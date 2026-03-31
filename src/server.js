@@ -3,6 +3,7 @@ import cors from 'cors';
 import { connectDB } from './config/database.js';
 import { config } from './config/variables.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { Admin } from './models/Admin.js';
 import contactRoutes from './routes/contactRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
@@ -11,8 +12,63 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Auto-initialize admin user on startup
+const initializeAdmin = async () => {
+  try {
+    const existingAdmin = await Admin.findOne({ email: config.adminEmail });
+    if (!existingAdmin) {
+      const admin = new Admin({
+        email: config.adminEmail,
+        password: config.adminPassword,
+        name: 'Admin',
+      });
+      await admin.save();
+      console.log('✓ Admin user initialized successfully');
+    } else {
+      console.log('✓ Admin user already exists');
+    }
+  } catch (error) {
+    console.error('✗ Error initializing admin:', error.message);
+  }
+};
+
+// Initialize admin after a short delay to ensure DB connection
+setTimeout(initializeAdmin, 1000);
+
 // Middleware
-app.use(cors());
+// Configure CORS to allow localhost and tunneled URLs
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost on any port
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Allow ngrok URLs
+    if (origin.includes('ngrok')) {
+      return callback(null, true);
+    }
+    
+    // Allow localtunnel URLs
+    if (origin.includes('loca.lt')) {
+      return callback(null, true);
+    }
+    
+    // Allow cloudflare tunnel URLs
+    if (origin.includes('.trycloudflare.com') || origin.includes('.cloudflare')) {
+      return callback(null, true);
+    }
+    
+    // Default allow all for development
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
