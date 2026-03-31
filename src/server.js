@@ -38,33 +38,10 @@ setTimeout(initializeAdmin, 1000);
 // Middleware
 // Configure CORS to allow localhost and tunneled URLs
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow localhost on any port
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
-    }
-    
-    // Allow ngrok URLs
-    if (origin.includes('ngrok')) {
-      return callback(null, true);
-    }
-    
-    // Allow localtunnel URLs
-    if (origin.includes('loca.lt')) {
-      return callback(null, true);
-    }
-    
-    // Allow cloudflare tunnel URLs
-    if (origin.includes('.trycloudflare.com') || origin.includes('.cloudflare')) {
-      return callback(null, true);
-    }
-    
-    // Default allow all for development
-    callback(null, true);
-  },
+  origin: [
+    "http://localhost:5173", // local dev
+    "https://website-web-frontend.vercel.app" // tumhara Vercel frontend
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
